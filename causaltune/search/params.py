@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 import warnings
 from econml.inference import BootstrapInference  # noqa F401
 from sklearn import linear_model
+from hiertunehub import SearchSpace
 
 from causaltune.utils import clean_config
 from causaltune.search.component import model_from_cfg, joint_config
@@ -161,7 +162,27 @@ class SimpleParamService:
                 data_size, outcome_estimator_list
             )
 
+        out = SearchSpace.from_flaml(out, name="estimator_name")
+
         return out
+
+    @staticmethod
+    def parse_tuner_params(params: dict, framework: str) -> dict:
+        if framework == "flaml":
+            return params
+        elif framework == "hyperopt":
+            return {
+                "max_evals": params["num_samples"] if params["num_samples"] != -1 else None,
+                "timeout": params["time_budget_s"],
+                "verbose": params["verbose"],
+            }
+        elif framework == "optuna":
+            return {
+                "n_trials": params["num_samples"] if params["num_samples"] != -1 else None,
+                "timeout": params["time_budget_s"],
+            }
+        else:
+            raise ValueError(f"Framework {framework} not supported")
 
     def default_configs(
         self,

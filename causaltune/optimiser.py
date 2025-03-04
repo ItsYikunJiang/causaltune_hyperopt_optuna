@@ -8,7 +8,7 @@ import traceback
 import pandas as pd
 import numpy as np
 from sklearn.linear_model import _base
-from flaml import tune
+from hiertunehub import create_tuner
 
 from sklearn.dummy import DummyClassifier
 from sklearn.model_selection import train_test_split
@@ -200,7 +200,7 @@ class CausalTune:
         self._settings["propensity_model"] = propensity_model
         self._settings["outcome_model"] = outcome_model
 
-        self.results = None
+        self.tuner = None
         self._best_estimators = defaultdict(lambda: (float("-inf"), None))
 
         self.original_estimator_list = estimator_list
@@ -288,6 +288,7 @@ class CausalTune:
         encoder_type: Optional[str] = None,
         encoder_outcome: Optional[str] = None,
         use_ray: Optional[bool] = None,
+        framework: Optional[str] = "flaml",
     ):
         """Performs AutoML on list of causal inference estimators
         - If estimator has a search space specified in its parameters, HPO is performed on the whole model.
@@ -474,47 +475,60 @@ class CausalTune:
             else []
         )
 
-        if resume and self.results:
-            # pull out configs and resume_scores from previous trials:
-            for _, result in self.results.results.items():
-                self.resume_scores.append(result[self.metric])
-                self.resume_cfg.append(result["config"])
-            # append init_cfgs that have not yet been evaluated
-            for cfg in init_cfg:
-                self.resume_cfg.append(cfg) if cfg not in self.resume_cfg else None
-        try:
-            self.results = tune.run(
-                self._tune_with_config,
-                search_space,
-                metric=self.metric,
-                # use_ray=self.use_ray,
-                cost_attr="evaluation_cost",
-                points_to_evaluate=(init_cfg if len(self.resume_cfg) == 0 else self.resume_cfg),
-                evaluated_rewards=([] if len(self.resume_scores) == 0 else self.resume_scores),
-                mode=("min" if self.metric in metrics_to_minimize() else "max"),
-                # resources_per_trial= {"cpu": 1} if self.use_ray else None,
-                low_cost_partial_config={},
-                **self._settings["tuner"],
-            )
+        # TODO: intergrate resume
+        # if resume and self.results:
+        #     # pull out configs and resume_scores from previous trials:
+        #     for _, result in self.results.results.items():
+        #         self.resume_scores.append(result[self.metric])
+        #         self.resume_cfg.append(result["config"])
+        #     # append init_cfgs that have not yet been evaluated
+        #     for cfg in init_cfg:
+        #         self.resume_cfg.append(cfg) if cfg not in self.resume_cfg else None
 
-            if self.results.get_best_trial() is None:
-                raise Exception(
-                    "Optimization failed! Did you set large enough time_budget and components_budget?"
-                )
-        except Exception:
-            # we must have an older FLAML version that doesn't support the cost_attr parameter
-            self.results = tune.run(
-                self._tune_with_config,
-                search_space,
-                metric=self.metric,
-                points_to_evaluate=(init_cfg if len(self.resume_cfg) == 0 else self.resume_cfg),
-                evaluated_rewards=([] if len(self.resume_scores) == 0 else self.resume_scores),
-                mode=("min" if self.metric in metrics_to_minimize() else "max"),
-                low_cost_partial_config={},
-                **self._settings["tuner"],
-            )
-            # print("Optimization failed!\n", traceback.format_exc())
-            # raise e
+        self.tuner = create_tuner(
+            self._tune_with_config,
+            search_space,
+            metric=self.metric,
+            mode=("min" if self.metric in metrics_to_minimize() else "max"),
+            framework=framework,
+            **self.cfg.parse_tuner_params(self._settings["tuner"], framework),
+        )
+
+        self.tuner.run()
+
+        # try:
+        #     self.results = tune.run(
+        #         self._tune_with_config,
+        #         search_space,
+        #         metric=self.metric,
+        #         # use_ray=self.use_ray,
+        #         cost_attr="evaluation_cost",
+        #         points_to_evaluate=(init_cfg if len(self.resume_cfg) == 0 else self.resume_cfg),
+        #         evaluated_rewards=([] if len(self.resume_scores) == 0 else self.resume_scores),
+        #         mode=("min" if self.metric in metrics_to_minimize() else "max"),
+        #         # resources_per_trial= {"cpu": 1} if self.use_ray else None,
+        #         low_cost_partial_config={},
+        #         **self._settings["tuner"],
+        #     )
+        #
+        #     if self.results.get_best_trial() is None:
+        #         raise Exception(
+        #             "Optimization failed! Did you set large enough time_budget and components_budget?"
+        #         )
+        # except Exception:
+        #     # we must have an older FLAML version that doesn't support the cost_attr parameter
+        #     self.results = tune.run(
+        #         self._tune_with_config,
+        #         search_space,
+        #         metric=self.metric,
+        #         points_to_evaluate=(init_cfg if len(self.resume_cfg) == 0 else self.resume_cfg),
+        #         evaluated_rewards=([] if len(self.resume_scores) == 0 else self.resume_scores),
+        #         mode=("min" if self.metric in metrics_to_minimize() else "max"),
+        #         low_cost_partial_config={},
+        #         **self._settings["tuner"],
+        #     )
+        #     # print("Optimization failed!\n", traceback.format_exc())
+        #     # raise e
         self.update_summary_scores()
 
     def update_summary_scores(self):
@@ -523,7 +537,7 @@ class CausalTune:
         Returns:
             None
         """
-        self.scores = Scorer.best_score_by_estimator(self.results.results, self.metric)
+        self.scores = Scorer.best_score_by_estimator(self.tuner.results, self.metric)
         # now inject the separately saved model objects
         for est_name in self.scores:
             # Todo: Check approximate scores for OrthoIV (possibly other IV estimators)
@@ -699,7 +713,7 @@ class CausalTune:
         Returns:
             None
         """
-        return self.results.best_result["estimator_name"]
+        return self.tuner.best_result["estimator_name"]
 
     @property
     def model(self):
@@ -708,7 +722,7 @@ class CausalTune:
         Returns:
             CausalEstimator
         """
-        return self.results.best_result["estimator"].estimator
+        return self.tuner.best_result["estimator"].estimator
 
     def best_model_for_estimator(self, estimator_name):
         """Return the best model found for a particular estimator.
@@ -730,7 +744,7 @@ class CausalTune:
         Returns:
             (dict): the best configuration
         """
-        return self.results.best_config
+        return self.tuner.best_params
 
     @property
     def best_config_per_estimator(self):
@@ -749,7 +763,7 @@ class CausalTune:
         """
         Returns:
             (float):  the best score found."""
-        return self.results.best_result[self.metric]
+        return self.tuner.best_result[self.metric]
 
     def effect(self, df, *args, **kwargs):
         """Heterogeneous Treatment Effects for data df

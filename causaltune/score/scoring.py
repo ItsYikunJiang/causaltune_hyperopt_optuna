@@ -1321,7 +1321,7 @@ class Scorer:
         return out
 
     @staticmethod
-    def best_score_by_estimator(scores: Dict[str, dict], metric: str) -> Dict[str, dict]:
+    def best_score_by_estimator(scores: list[dict], metric: str) -> Dict[str, dict]:
         """Obtain best score for each estimator.
 
         Args:
@@ -1333,19 +1333,19 @@ class Scorer:
 
         """
 
-        for k, v in scores.items():
+        for v in scores:
             if "estimator_name" not in v:
                 raise ValueError(
                     f"Malformed scores dict, 'estimator_name' field missing " f"in{k}, {v}"
                 )
 
         estimator_names = sorted(
-            list(set([v["estimator_name"] for v in scores.values() if "estimator_name" in v]))
+            list(set([v["estimator_name"] for v in scores if "estimator_name" in v]))
         )
         best = {}
         for name in estimator_names:
             est_scores = [
-                v for v in scores.values() if "estimator_name" in v and v["estimator_name"] == name
+                v for v in scores if "estimator_name" in v and v["estimator_name"] == name
             ]
             best[name] = (
                 min(est_scores, key=lambda x: x[metric])
