@@ -169,17 +169,25 @@ class SimpleParamService:
     @staticmethod
     def parse_tuner_params(params: dict, framework: str) -> dict:
         if framework == "flaml":
-            return params
+            return {
+                "num_samples": params["num_samples"],
+                "time_budget_s": params["time_budget_s"],
+                "verbose": params["verbose"],
+                "resources_per_trial": params["resources_per_trial"],
+                "search_alg": params["algo"],
+            }
         elif framework == "hyperopt":
             return {
                 "max_evals": params["num_samples"] if params["num_samples"] != -1 else None,
                 "timeout": params["time_budget_s"],
                 "verbose": params["verbose"],
+                "algo": params["algo"],
             }
         elif framework == "optuna":
             return {
                 "n_trials": params["num_samples"] if params["num_samples"] != -1 else None,
                 "timeout": params["time_budget_s"],
+                "sampler": params["algo"],
             }
         else:
             raise ValueError(f"Framework {framework} not supported")

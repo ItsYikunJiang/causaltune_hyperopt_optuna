@@ -174,6 +174,7 @@ class CausalTune:
         self._settings["tuner"]["resources_per_trial"] = (
             resources_per_trial if resources_per_trial is not None else {"cpu": 0.5}
         )
+        self._settings["tuner"]["algo"] = None
         self._settings["try_init_configs"] = try_init_configs
         self._settings["include_experimental_estimators"] = include_experimental_estimators
 
@@ -289,7 +290,7 @@ class CausalTune:
         encoder_outcome: Optional[str] = None,
         use_ray: Optional[bool] = None,
         framework: Optional[str] = "flaml",
-        **kwargs,
+        algo = None,
     ):
         """Performs AutoML on list of causal inference estimators
         - If estimator has a search space specified in its parameters, HPO is performed on the whole model.
@@ -438,6 +439,7 @@ class CausalTune:
             self._settings["tuner"]["time_budget_s"] = (
                 2.5 * len(self.estimator_list) * self._settings["component_models"]["time_budget"]
             )
+        self._settings["tuner"]["algo"] = algo
 
         cmtb = self._settings["component_models"]["time_budget"]
 
@@ -493,7 +495,6 @@ class CausalTune:
             mode=("min" if self.metric in metrics_to_minimize() else "max"),
             framework=framework,
             **self.cfg.parse_tuner_params(self._settings["tuner"], framework),
-            **kwargs,
         )
 
         self.tuner.run()
