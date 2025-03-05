@@ -289,6 +289,7 @@ class CausalTune:
         encoder_outcome: Optional[str] = None,
         use_ray: Optional[bool] = None,
         framework: Optional[str] = "flaml",
+        **kwargs,
     ):
         """Performs AutoML on list of causal inference estimators
         - If estimator has a search space specified in its parameters, HPO is performed on the whole model.
@@ -492,6 +493,7 @@ class CausalTune:
             mode=("min" if self.metric in metrics_to_minimize() else "max"),
             framework=framework,
             **self.cfg.parse_tuner_params(self._settings["tuner"], framework),
+            **kwargs,
         )
 
         self.tuner.run()
