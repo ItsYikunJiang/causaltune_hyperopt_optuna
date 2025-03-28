@@ -37,15 +37,28 @@ def flaml_config_to_tune_config(flaml_config: dict) -> Tuple[dict, dict, dict]:
     return cfg, init_params, low_cost_init_params
 
 
+class WrappedKNeighborsEstimator(KNeighborsEstimator):
+    @classmethod
+    def search_space(cls, data_size, **params):
+        upper = min(512, int(data_size[0] / 10))
+        return {
+            "n_neighbors": {
+                "domain": tune.lograndint(lower=1, upper=max(2, upper)),
+                "init_value": 5,
+                "low_cost_init_value": 1,
+            },
+        }
+
+
 estimators = {
     "elastic_net": ElasticNetEstimator,
     "lasso_lars": LassoLarsEstimator,
-    "knn": KNeighborsEstimator,
+    "knn": WrappedKNeighborsEstimator,
     "xgboost": XGBoostSklearnEstimator,
     "xgboost_limit_depth": XGBoostLimitDepthEstimator,
     "random_forest": RandomForestEstimator,
     "lgbm": LGBMEstimator,
-    "catboost": CatBoostEstimator,
+    # "catboost": CatBoostEstimator,
     "extra_trees": ExtraTreesEstimator,
 }
 
