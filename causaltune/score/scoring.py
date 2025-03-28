@@ -105,7 +105,7 @@ class Scorer:
             self.constant_ptt = False
 
         if problem == "backdoor":
-            print("Fitting a Propensity-Weighted scoring estimator " "to be used in scoring tasks")
+            # print("Fitting a Propensity-Weighted scoring estimator " "to be used in scoring tasks")
             treatment_series = causal_model._data[causal_model._treatment[0]]
             # this will also fit self.propensity_model, which we'll also use in
             # self.erupt
@@ -126,7 +126,8 @@ class Scorer:
             ):
                 raise ValueError("Propensity model fitting failed. Please check the setup.")
             else:
-                print("Propensity Model Fitted Successfully")
+                # print("Propensity Model Fitted Successfully")
+                pass
 
             treatment_name = self.psw_estimator._treatment_name
             if not isinstance(treatment_name, str):
