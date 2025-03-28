@@ -632,7 +632,7 @@ class CausalTune:
                     ),
                 )
             if "Dummy" not in est_name:
-                estimates["evaluation_cost"] = estimates.pop("elapsed_time")
+                estimates["evaluation_cost"] = estimates.get("elapsed_time")
 
         return estimates
 
