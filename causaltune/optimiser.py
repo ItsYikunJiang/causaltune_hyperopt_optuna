@@ -291,6 +291,7 @@ class CausalTune:
         use_ray: Optional[bool] = None,
         framework: Optional[str] = "flaml",
         algo = None,
+        random_state_train_test_split: Optional[int] = None,
     ):
         """Performs AutoML on list of causal inference estimators
         - If estimator has a search space specified in its parameters, HPO is performed on the whole model.
@@ -350,7 +351,8 @@ class CausalTune:
 
         # To be used for component model training/selection
         self.train_df, self.test_df = train_test_split(
-            self.data.data, train_size=self._settings["train_size"], shuffle=True
+            self.data.data, train_size=self._settings["train_size"], shuffle=True,
+            random_state=random_state_train_test_split
         )
 
         # smuggle propensity modifiers into common causes, filter later in component models
