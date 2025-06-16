@@ -272,6 +272,11 @@ def synth_acic(condition=1) -> CausalityDataset:
         columns={c: c.replace("_", "") for c in cols},
         inplace=True,
     )
+    categorical_cols = covariates.select_dtypes(include=["object"]).columns.tolist()
+    covariates_encoded = pd.get_dummies(
+        covariates, columns=categorical_cols, drop_first=True
+    )
+
     url = (
         "https://raw.githubusercontent.com/IBM/causallib/master/causallib/"
         + f"datasets/data/acic_challenge_2016/zymu_{condition}.csv"
@@ -280,7 +285,7 @@ def synth_acic(condition=1) -> CausalityDataset:
     z_y_mu["y_factual"] = z_y_mu.apply(
         lambda row: row["y1"] if row["z"] else row["y0"], axis=1
     )
-    data = pd.concat([z_y_mu["z"], z_y_mu["y_factual"], covariates], axis=1)
+    data = pd.concat([z_y_mu["z"], z_y_mu["y_factual"], covariates_encoded], axis=1)
     data.rename(columns={"z": "treatment"}, inplace=True)
 
     return CausalityDataset(data, "treatment", ["y_factual"])
