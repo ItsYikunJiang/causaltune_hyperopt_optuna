@@ -34,6 +34,9 @@ setup(
         "wise-pizza",
         "seaborn",
         "category_encoders==2.6.3",
+        "hiertunehub",
+        "hyperopt",
+        "optuna"
     ],
     extras_require={
         "test": [

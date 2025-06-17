@@ -1,6 +1,6 @@
 import copy
 import warnings
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Any
 from collections import defaultdict
 import time
 
@@ -290,7 +290,7 @@ class CausalTune:
         encoder_outcome: Optional[str] = None,
         use_ray: Optional[bool] = None,
         framework: Optional[str] = "flaml",
-        algo = None,
+        algo: Any = None,
     ):
         """Performs AutoML on list of causal inference estimators
         - If estimator has a search space specified in its parameters, HPO is performed on the whole model.
@@ -310,6 +310,8 @@ class CausalTune:
             preprocess (bool): preprocess CausalityDataset if needed.
             encoder_type (Optional[str]): Categorical Encoder for preprocessing
             encoder_outcome (Optional[str]): Categorical Encoder target for preprocessing: TargetEncoder, WOE.
+            framework (Optional[str]): framework to use for HPO, choices are "flaml", "hyperopt" and "optuna".
+            algo (Optional[str]): algorithm to use for HPO, each framework has its own set of algorithms to choose from.
 
         Returns:
             None
@@ -478,7 +480,7 @@ class CausalTune:
             else []
         )
 
-        # TODO: intergrate resume
+        # TODO: intergrate resume and init cfg
         # if resume and self.results:
         #     # pull out configs and resume_scores from previous trials:
         #     for _, result in self.results.results.items():
