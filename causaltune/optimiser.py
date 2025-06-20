@@ -292,6 +292,7 @@ class CausalTune:
         framework: Optional[str] = "flaml",
         algo = None,
         random_state_train_test_split: Optional[int] = None,
+        resume_from_results: Optional[Union[str, dict]] = None
     ):
         """Performs AutoML on list of causal inference estimators
         - If estimator has a search space specified in its parameters, HPO is performed on the whole model.
@@ -499,7 +500,10 @@ class CausalTune:
             **self.cfg.parse_tuner_params(self._settings["tuner"], framework),
         )
 
-        self.tuner.run()
+        if resume_from_results is not None:
+            self.tuner.resume_from_results(resume_from_results)
+        else:
+            self.tuner.run()
 
         # try:
         #     self.results = tune.run(
@@ -534,7 +538,7 @@ class CausalTune:
         #     )
         #     # print("Optimization failed!\n", traceback.format_exc())
         #     # raise e
-        self.update_summary_scores()
+        # self.update_summary_scores()
 
     def update_summary_scores(self):
         """Stores scores for metric of interest for each estimator
@@ -685,7 +689,7 @@ class CausalTune:
         except Exception as e:
             print("Evaluation failed!\n", config, traceback.format_exc())
             return {
-                self.metric: -np.inf,
+                self.metric: np.inf if self.metric in metrics_to_minimize() else -np.inf,
                 "estimator_name": self.estimator_name,
                 "exception": e,
                 "traceback": traceback.format_exc(),
