@@ -586,57 +586,57 @@ class CausalTune:
             estimates["evaluation_cost"] = 1e8  # will be overwritten for successful runs
 
             # Initialize best_score if this is the first estimator for this name
-            if est_name not in self._best_estimators:
-                self._best_estimators[est_name] = (
-                    (
-                        np.inf
-                        if self.metric
-                        in [
-                            "energy_distance",
-                            "psw_energy_distance",
-                            "frobenius_norm",
-                            "psw_frobenius_norm",
-                            "codec",
-                            "policy_risk",
-                        ]
-                        else -np.inf
-                    ),
-                    None,
-                )
-
-            best_score = self._best_estimators[est_name][0]
-
-            # Determine if the current estimator performs better, handling inf values
-            if self.metric in [
-                "energy_distance",
-                "psw_energy_distance",
-                "frobenius_norm",
-                "psw_frobenius_norm",
-                "codec",
-                "policy_risk",
-            ]:
-                is_better = (np.isfinite(current_score) and current_score < best_score) or (
-                    np.isinf(best_score) and np.isfinite(current_score)
-                )
-            else:
-                is_better = (np.isfinite(current_score) and current_score > best_score) or (
-                    np.isinf(best_score) and np.isfinite(current_score)
-                )
-
-            # Store the estimator if we're storing all, if it's better, or if it's the first valid (non-inf) estimator
-            if (
-                self._settings["store_all"]
-                or is_better
-                or (self._best_estimators[est_name][1] is None and np.isfinite(current_score))
-            ):
-                self._best_estimators[est_name] = (
-                    current_score,
-                    (
-                        estimates["estimator"]
-                        if self._settings["store_all"]
-                        else estimates.pop("estimator")
-                    ),
-                )
+            # if est_name not in self._best_estimators:
+            #     self._best_estimators[est_name] = (
+            #         (
+            #             np.inf
+            #             if self.metric
+            #             in [
+            #                 "energy_distance",
+            #                 "psw_energy_distance",
+            #                 "frobenius_norm",
+            #                 "psw_frobenius_norm",
+            #                 "codec",
+            #                 "policy_risk",
+            #             ]
+            #             else -np.inf
+            #         ),
+            #         None,
+            #     )
+            #
+            # best_score = self._best_estimators[est_name][0]
+            #
+            # # Determine if the current estimator performs better, handling inf values
+            # if self.metric in [
+            #     "energy_distance",
+            #     "psw_energy_distance",
+            #     "frobenius_norm",
+            #     "psw_frobenius_norm",
+            #     "codec",
+            #     "policy_risk",
+            # ]:
+            #     is_better = (np.isfinite(current_score) and current_score < best_score) or (
+            #         np.isinf(best_score) and np.isfinite(current_score)
+            #     )
+            # else:
+            #     is_better = (np.isfinite(current_score) and current_score > best_score) or (
+            #         np.isinf(best_score) and np.isfinite(current_score)
+            #     )
+            #
+            # # Store the estimator if we're storing all, if it's better, or if it's the first valid (non-inf) estimator
+            # if (
+            #     self._settings["store_all"]
+            #     or is_better
+            #     or (self._best_estimators[est_name][1] is None and np.isfinite(current_score))
+            # ):
+            #     self._best_estimators[est_name] = (
+            #         current_score,
+            #         (
+            #             estimates["estimator"]
+            #             if self._settings["store_all"]
+            #             else estimates.pop("estimator")
+            #         ),
+            #     )
             if "Dummy" not in est_name:
                 estimates["evaluation_cost"] = estimates.get("elapsed_time")
 
@@ -666,11 +666,11 @@ class CausalTune:
             start_time = time.time()
             estimate = self._est_effect_stub(method_params)
             scores = {
-                "estimator_name": self.estimator_name,
-                "train": self._compute_metrics(
-                    estimate,
-                    self.train_df,
-                ),
+                # "estimator_name": self.estimator_name,
+                # "train": self._compute_metrics(
+                #     estimate,
+                #     self.train_df,
+                # ),
                 "validation": self._compute_metrics(
                     estimate,
                     self.test_df,
@@ -679,20 +679,20 @@ class CausalTune:
             elapsed_time = time.time() - start_time
             return {
                 self.metric: scores["validation"][self.metric],
-                "estimator": estimate,
-                "estimator_name": self.estimator_name,
-                "scores": scores,
+                # "estimator": estimate,
+                # "estimator_name": self.estimator_name,
+                # "scores": scores,
                 # TODO: return full config!
-                "config": config,
+                # "config": config,
                 "elapsed_time": elapsed_time,
             }
         except Exception as e:
             print("Evaluation failed!\n", config, traceback.format_exc())
             return {
                 self.metric: np.inf if self.metric in metrics_to_minimize() else -np.inf,
-                "estimator_name": self.estimator_name,
-                "exception": e,
-                "traceback": traceback.format_exc(),
+                # "estimator_name": self.estimator_name,
+                # "exception": e,
+                # "traceback": traceback.format_exc(),
             }
 
     def _compute_metrics(self, estimator, df: pd.DataFrame) -> dict:
