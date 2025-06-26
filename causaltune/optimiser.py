@@ -691,7 +691,7 @@ class CausalTune:
             return {
                 self.metric: np.inf if self.metric in metrics_to_minimize() else -np.inf,
                 # "estimator_name": self.estimator_name,
-                # "exception": e,
+                "exception": e,
                 # "traceback": traceback.format_exc(),
             }
 
