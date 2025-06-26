@@ -680,7 +680,7 @@ class CausalTune:
             return {
                 self.metric: scores["validation"][self.metric],
                 # "estimator": estimate,
-                # "estimator_name": self.estimator_name,
+                "estimator_name": self.estimator_name,
                 # "scores": scores,
                 # TODO: return full config!
                 # "config": config,
